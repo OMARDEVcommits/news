@@ -827,6 +827,20 @@
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
             });
 
+            // Admin link visibility
+            const session = localStorage.getItem('adminSession') || sessionStorage.getItem('adminSession');
+            const adminLink = document.querySelector('.admin-link');
+            if (session) {
+                const userData = JSON.parse(session);
+                if (userData.role === 'admin') {
+                    adminLink.style.display = 'inline-block';
+                } else {
+                    adminLink.style.display = 'none';
+                }
+            } else {
+                adminLink.style.display = 'none';
+            }
+
             // Sticky header
             const header = document.getElementById('main-header');
             window.addEventListener('scroll', () => {

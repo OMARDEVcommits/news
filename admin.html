@@ -649,8 +649,28 @@
 
         let editingArticleId = null;
 
+        // Check authentication
+        function checkAuthentication() {
+            const session = localStorage.getItem('adminSession') || sessionStorage.getItem('adminSession');
+            if (!session) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            // Check if session is valid and user has admin role
+            const userData = JSON.parse(session);
+            if (userData.role !== 'admin') {
+                alert('Access denied. Admin privileges required.');
+                window.location.href = 'main.html';
+                return false;
+            }
+            
+            return true;
+        }
+
         // Initialize
         function init() {
+            if (!checkAuthentication()) return;
             loadArticles();
             updateStats();
             setupEventListeners();
@@ -744,6 +764,11 @@
             // Navigation
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', () => {
+                    const page = item.dataset.page;
+                    if (page === 'logout') {
+                        logout();
+                        return;
+                    }
                     document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
                     item.classList.add('active');
                 });
@@ -856,6 +881,15 @@
         function formatDate(dateString) {
             const options = { year: 'numeric', month: 'short', day: 'numeric' };
             return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('adminSession');
+                sessionStorage.removeItem('adminSession');
+                window.location.href = 'index.html';
+            }
         }
 
         // Load articles from localStorage on page load
