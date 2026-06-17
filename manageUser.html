@@ -239,6 +239,16 @@
             color: #7b1fa2;
         }
 
+        .status-published {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-draft {
+            background: #fff4e5;
+            color: #b25600;
+        }
+
         .status-badge {
             padding: 4px 12px;
             border-radius: 6px;
@@ -299,6 +309,65 @@
             max-height: 90vh;
             overflow-y: auto;
             padding: 40px;
+        }
+
+        .login-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-modal.active {
+            display: flex;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+        }
+
+        .login-card h2 {
+            margin-bottom: 12px;
+            font-size: 1.8rem;
+            color: #1d1d1f;
+        }
+
+        .login-card p {
+            margin-bottom: 24px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .login-error {
+            margin-top: 8px;
+            color: #c8102e;
+            font-size: 0.95rem;
+            min-height: 1.2em;
+        }
+
+        .login-footer {
+            margin-top: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .login-footer label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 0.95rem;
         }
 
         .modal-header {
@@ -419,6 +488,28 @@
     </style>
 </head>
 <body>
+    <div class="login-modal" id="loginModal">
+        <div class="login-card">
+            <h2>Admin Login</h2>
+            <p>Only authorized administrators may access this panel. Enter your credentials to continue.</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <div class="login-footer">
+                    <label><input type="checkbox" id="rememberMe"> Remember me</label>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+                <div class="login-error" id="loginError"></div>
+            </form>
+        </div>
+    </div>
+
     <div class="admin-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -426,13 +517,13 @@
                 <p>The Financial Chronicle</p>
             </div>
             <nav class="sidebar-nav">
-                <a href="admin-dashboard.html" class="nav-item">
+                <a href="manageUser.html" class="nav-item">
                     📊 Dashboard
                 </a>
-                <a href="admin-dashboard.html" class="nav-item">
+                <a href="manageUser.html" class="nav-item">
                     📰 Articles
                 </a>
-                <a href="user-management.html" class="nav-item active">
+                <a href="manageUser.html" class="nav-item active">
                     👥 Users
                 </a>
                 <a href="#" class="nav-item">
@@ -452,6 +543,7 @@
 
             <div class="tabs">
                 <button class="tab active" data-tab="users">Users</button>
+                <button class="tab" data-tab="articles">Articles</button>
                 <button class="tab" data-tab="activity">Login Activity</button>
             </div>
 
@@ -474,6 +566,29 @@
                         </thead>
                         <tbody id="usersTableBody">
                         </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Articles Tab -->
+            <div class="tab-content" id="articlesTab" style="display: none;">
+                <div class="card">
+                    <div class="card-header" style="justify-content: space-between; align-items: center;">
+                        <h2>Manage Articles</h2>
+                        <button class="btn btn-primary" id="addArticleBtn">+ Add New Article</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Author</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="articleTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -533,36 +648,158 @@
         </div>
     </div>
 
+    <div class="modal" id="articleEditorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="articleModalTitle">Add New Article</h2>
+                <button class="close-btn" id="closeArticleEditor">&times;</button>
+            </div>
+            <form id="articleForm">
+                <input type="hidden" id="articleId">
+
+                <div class="form-group">
+                    <label for="articleTitle">Title *</label>
+                    <input type="text" id="articleTitle" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="articleCategory">Category *</label>
+                    <input type="text" id="articleCategory" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="articleAuthor">Author *</label>
+                    <input type="text" id="articleAuthor" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="articleImage">Image URL</label>
+                    <input type="text" id="articleImage" placeholder="Optional image URL">
+                </div>
+
+                <div class="form-group">
+                    <label for="articleExcerpt">Excerpt *</label>
+                    <textarea id="articleExcerpt" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="articleContent">Content *</label>
+                    <textarea id="articleContent" rows="6" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="articleReadTime">Read Time (minutes)</label>
+                    <input type="number" id="articleReadTime" min="1" value="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="articleStatus">Status *</label>
+                    <select id="articleStatus" required>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelArticleBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Article</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        const ADMIN_USERNAME = 'admin';
+        const ADMIN_PASSWORD = 'SuperSecureAdmin2026!';
+        const ADMIN_SESSION_KEY = 'adminSession';
+
         let users = [];
+        let articles = [];
         let editingUserId = null;
+        let editingArticleId = null;
+        let authInitialized = false;
+
+        function getAdminSession() {
+            return sessionStorage.getItem(ADMIN_SESSION_KEY) || localStorage.getItem(ADMIN_SESSION_KEY);
+        }
+
+        function setAdminSession(username, remember = false) {
+            const sessionData = JSON.stringify({ role: 'admin', username });
+            if (remember) {
+                localStorage.setItem(ADMIN_SESSION_KEY, sessionData);
+            } else {
+                sessionStorage.setItem(ADMIN_SESSION_KEY, sessionData);
+            }
+        }
+
+        function clearAdminSession() {
+            localStorage.removeItem(ADMIN_SESSION_KEY);
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        }
+
+        function showLogin() {
+            document.getElementById('loginModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideLogin() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.body.style.overflow = '';
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('loginForm').reset();
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const remember = document.getElementById('rememberMe').checked;
+
+            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                setAdminSession(username, remember);
+                hideLogin();
+                init();
+                return;
+            }
+
+            document.getElementById('loginError').textContent = 'Invalid username or password.';
+        }
 
         // Check authentication
-        function checkAuthentication() {
-            const session = localStorage.getItem('adminSession') || sessionStorage.getItem('adminSession');
-            if (!session) {
-                window.location.href = 'index.html';
+        function checkAuthentication(forceLogin = false) {
+            if (forceLogin) {
+                showLogin();
                 return false;
             }
-            
-            // Check if session is valid and user has admin role
+
+            const session = getAdminSession();
+            if (!session) {
+                showLogin();
+                return false;
+            }
+
             const userData = JSON.parse(session);
             if (userData.role !== 'admin') {
-                alert('Access denied. Admin privileges required.');
-                window.location.href = 'main.html';
+                showLogin();
                 return false;
             }
-            
+
             return true;
         }
 
         // Initialize
         function init() {
-            if (!checkAuthentication()) return;
-            
+            if (!authInitialized) {
+                setupEventListeners();
+                authInitialized = true;
+            }
+
+            // Always require login when page loads for security
+            if (!checkAuthentication(true)) return;
+
             loadUsers();
+            loadArticles();
             loadActivity();
-            setupEventListeners();
         }
 
         // Load users
@@ -571,6 +808,35 @@
             renderUsers();
         }
 
+        function loadArticles() {
+            articles = JSON.parse(localStorage.getItem('articles') || '[]');
+            renderArticlesTable();
+        }
+
+        function renderArticlesTable() {
+            const tbody = document.getElementById('articleTableBody');
+            tbody.innerHTML = '';
+
+            articles.forEach(article => {
+                const row = document.createElement('tr');
+                const createdDate = new Date(article.createdAt).toLocaleDateString();
+
+                row.innerHTML = `
+                    <td>${article.title}</td>
+                    <td>${article.category}</td>
+                    <td>${article.author}</td>
+                    <td><span class="role-badge status-${article.status}">${article.status}</span></td>
+                    <td>${createdDate}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="icon-btn" onclick="editArticle(${article.id})" title="Edit">✏️</button>
+                            <button class="icon-btn" onclick="deleteArticle(${article.id})" title="Delete">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
         // Render users
         function renderUsers() {
             const tbody = document.getElementById('usersTableBody');
@@ -639,13 +905,18 @@
         function setupEventListeners() {
             // Add user button
             document.getElementById('addUserBtn').addEventListener('click', openAddModal);
+            document.getElementById('addArticleBtn').addEventListener('click', openAddArticle);
 
             // Close modal
             document.getElementById('closeModal').addEventListener('click', closeModal);
             document.getElementById('cancelBtn').addEventListener('click', closeModal);
+            document.getElementById('closeArticleEditor').addEventListener('click', closeArticleEditor);
+            document.getElementById('cancelArticleBtn').addEventListener('click', closeArticleEditor);
 
             // Form submission
             document.getElementById('userForm').addEventListener('submit', saveUser);
+            document.getElementById('articleForm').addEventListener('submit', saveArticle);
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
 
             // Tabs
             document.querySelectorAll('.tab').forEach(tab => {
@@ -665,6 +936,7 @@
             document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
             
             document.getElementById('usersTab').style.display = tabName === 'users' ? 'block' : 'none';
+            document.getElementById('articlesTab').style.display = tabName === 'articles' ? 'block' : 'none';
             document.getElementById('activityTab').style.display = tabName === 'activity' ? 'block' : 'none';
         }
 
@@ -748,6 +1020,78 @@
                 users = users.filter(u => u.id !== id);
                 localStorage.setItem('users', JSON.stringify(users));
                 renderUsers();
+            }
+        }
+
+        function openAddArticle() {
+            editingArticleId = null;
+            document.getElementById('articleModalTitle').textContent = 'Add New Article';
+            document.getElementById('articleForm').reset();
+            document.getElementById('articleId').value = '';
+            document.getElementById('articleEditorModal').classList.add('active');
+        }
+
+        function closeArticleEditor() {
+            document.getElementById('articleEditorModal').classList.remove('active');
+        }
+
+        function editArticle(id) {
+            editingArticleId = id;
+            const article = articles.find(a => a.id === id);
+
+            if (!article) return;
+
+            document.getElementById('articleModalTitle').textContent = 'Edit Article';
+            document.getElementById('articleId').value = article.id;
+            document.getElementById('articleTitle').value = article.title;
+            document.getElementById('articleCategory').value = article.category;
+            document.getElementById('articleAuthor').value = article.author;
+            document.getElementById('articleImage').value = article.image || '';
+            document.getElementById('articleExcerpt').value = article.excerpt;
+            document.getElementById('articleContent').value = article.content;
+            document.getElementById('articleReadTime').value = article.readTime || 3;
+            document.getElementById('articleStatus').value = article.status || 'draft';
+            document.getElementById('articleEditorModal').classList.add('active');
+        }
+
+        function saveArticle(e) {
+            e.preventDefault();
+
+            const articleData = {
+                title: document.getElementById('articleTitle').value.trim(),
+                category: document.getElementById('articleCategory').value.trim(),
+                author: document.getElementById('articleAuthor').value.trim(),
+                image: document.getElementById('articleImage').value.trim(),
+                excerpt: document.getElementById('articleExcerpt').value.trim(),
+                content: document.getElementById('articleContent').value.trim(),
+                readTime: Number(document.getElementById('articleReadTime').value) || 3,
+                status: document.getElementById('articleStatus').value,
+            };
+
+            if (editingArticleId) {
+                const index = articles.findIndex(a => a.id === editingArticleId);
+                articles[index] = { ...articles[index], ...articleData, updatedAt: new Date().toISOString() };
+            } else {
+                articleData.id = articles.length > 0 ? Math.max(...articles.map(a => a.id)) + 1 : 1;
+                articleData.createdAt = new Date().toISOString();
+                articleData.updatedAt = articleData.createdAt;
+                articles.unshift(articleData);
+            }
+
+            localStorage.setItem('articles', JSON.stringify(articles));
+            renderArticlesTable();
+            closeArticleEditor();
+            alert(editingArticleId ? 'Article updated successfully!' : 'Article created successfully!');
+        }
+
+        function deleteArticle(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            if (confirm(`Delete the article "${article.title}"?`)) {
+                articles = articles.filter(a => a.id !== id);
+                localStorage.setItem('articles', JSON.stringify(articles));
+                renderArticlesTable();
             }
         }
 

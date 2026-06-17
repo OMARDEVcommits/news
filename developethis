@@ -1,0 +1,9 @@
+What’s missing
+Your workspace does not have admin-dashboard.html
+So even if you log in as admin, the actual admin page file is not present
+manageUser.html is an admin-only page too, but it will redirect back to index.html unless adminSession exists
+Current practical result
+You cannot reach the admin panel from the site yet because:
+
+there is no login/auth flow that creates adminSession
+there is no admin-dashboard.html page to open
